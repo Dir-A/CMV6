@@ -33,18 +33,26 @@ class CMV6Pack
 private:
 	char* m_pRes;
 	size_t m_szAllocMax;
-	std::wstring& m_wsCMV;
+	std::wstring m_wsCMV;
+	std::wstring m_wsPath;
 	std::ifstream m_ifsCMV;
 	std::ofstream m_ofsRES;
+
+public:
+	size_t m_szData;
 	CMV6Header m_Header;
 	std::vector<CMV6IndexDescriptor> m_vecDescriptor;
 
-public:
-	CMV6Pack(std::wstring wsCMV);
-	~CMV6Pack();
-	bool ExtractRes(std::wstring& wsCMV, bool isDecode);
-
 private:
-	bool WriteResFile(std::wstring& wsRes, std::streampos posRes, size_t szRes);
+	void InitPackInfo();
+	bool WriteRes(std::wstring wsRes, std::streampos posRes, size_t szRes);
 
+public:
+	CMV6Pack();
+	CMV6Pack(std::wstring wsCMV, std::wstring wsPath);
+	~CMV6Pack();
+	bool UnPackAllRes();
+	bool UnPackSingleRes(unsigned int uiSequence);
+	static std::wstring MakeFileName(unsigned int uiSequence, unsigned int uiType);
+	char* GetResToBuffer(std::streampos posRes, size_t szRes);
 };

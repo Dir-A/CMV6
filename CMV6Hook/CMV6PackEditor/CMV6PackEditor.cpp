@@ -2,83 +2,122 @@
 #include <Windows.h>
 #include <string>
 
-CMV6Pack::CMV6Pack(std::wstring wsCMV) :
-	m_wsCMV(wsCMV),
+CMV6Pack::CMV6Pack():
+	m_szData(0),
 	m_szAllocMax(0),
-	m_pRes(nullptr)
+	m_pRes(nullptr),
+	m_Header({ 0 })
 {
-	CreateDirectoryW((m_wsCMV + L"_Unpack").c_str(), NULL);
-	ExtractRes(m_wsCMV,false);
+
+}
+
+CMV6Pack::CMV6Pack(std::wstring wsCMV, std::wstring wsPath) :
+	m_wsCMV(wsCMV),
+	m_wsPath(wsPath),
+	m_szData(0),
+	m_szAllocMax(0),
+	m_pRes(nullptr),
+	m_Header({0})
+{
+	if (m_wsPath[m_wsPath.size()] != L'\\')
+	{
+		m_wsPath.append(L"\\");
+	}
+
+	m_ifsCMV.open(wsCMV, std::ios::binary);
+	if (m_ifsCMV.is_open())
+	{
+		InitPackInfo();
+		return;
+	}
 }
 
 CMV6Pack::~CMV6Pack()
 {
+	if (m_ifsCMV.is_open())
+	{
+		m_ifsCMV.close();
+	}
+
 	if (m_pRes)
 	{
 		delete[] m_pRes;
 	}
-	m_ifsCMV.close();
 }
 
-bool CMV6Pack::ExtractRes(std::wstring& wsCMV, bool isDecode)
+void CMV6Pack::InitPackInfo()
 {
-	m_ifsCMV.open(wsCMV, std::ios::binary);
+	//Read File Header
+	m_ifsCMV.read((char*)&m_Header, sizeof(CMV6Header));
+	
+	//Read Resources Index
+	size_t szIndex = (m_Header.uiResCount + 1) * sizeof(CMV6IndexDescriptor);
+	CMV6IndexDescriptor* pDescriptor = nullptr;
+	char* pIndex = new char[szIndex];
+	m_ifsCMV.read(pIndex, szIndex);
+	pDescriptor = (CMV6IndexDescriptor*)pIndex;
+	if (pDescriptor)
+	{
+		for (size_t iteIndex = 0; iteIndex <= m_Header.uiResCount; iteIndex++)
+		{
+			m_szData += (pDescriptor + iteIndex)->uiCmpSize;
+			m_vecDescriptor.push_back(*(pDescriptor + iteIndex));
+		}
+		pDescriptor = nullptr;
+		delete[] pIndex;
+	}
+}
+
+inline std::wstring CMV6Pack::MakeFileName(unsigned int uiSequence, unsigned int uiType)
+{
+	wchar_t fileNameBuffer[20] = { 0 };
+
+	switch (uiType)
+	{
+	case 2:
+		swprintf_s(fileNameBuffer, L"%08d.jbpd", uiSequence);
+		break;
+
+	case 0:
+		swprintf_s(fileNameBuffer, L"%08d.ogg", uiSequence);
+		break;
+	}
+
+	return fileNameBuffer;
+}
+
+bool CMV6Pack::UnPackAllRes()
+{
 	if (m_ifsCMV.is_open())
 	{
-		char* pCMV6Header = new char[sizeof(CMV6Header)];
-		if (pCMV6Header)
+		std::wstring fileName;
+		for (CMV6IndexDescriptor& descriptor: m_vecDescriptor)
 		{
-			m_ifsCMV.read(pCMV6Header, sizeof(CMV6Header));
-		}
-		else
-		{
-			return false;
-		}
-		CMV6Header* pHeader = (CMV6Header*)pCMV6Header;
+			fileName = MakeFileName(descriptor.uiSequence,descriptor.uiType);
+			WriteRes(fileName, descriptor.uiOffset + m_Header.uiResSecOffset, descriptor.uiCmpSize);
 
-		size_t IndexDescriptorCount = pHeader->uiResCount + 1;
-		char* pCMV6Index = new char[IndexDescriptorCount * sizeof(CMV6IndexDescriptor)];
-		if (pCMV6Index)
-		{
-			m_ifsCMV.read(pCMV6Index, IndexDescriptorCount * sizeof(CMV6IndexDescriptor));
 		}
-		else
-		{
-			return false;
-		}
-		CMV6IndexDescriptor* pIndex = (CMV6IndexDescriptor*)pCMV6Index;
-
-		std::streampos posRes = 0;
-		std::wstring resName;
-		for (size_t iteIndex = 0; iteIndex < IndexDescriptorCount; iteIndex++)
-		{
-			switch (pIndex[iteIndex].uiType)
-			{
-			case 2:
-				resName = std::to_wstring(pIndex[iteIndex].uiSequence) + L".jbp";
-				break;
-			case 0:
-				resName = std::to_wstring(pIndex[iteIndex].uiSequence) + L".ogg";
-				break;
-			}
-
-			if (!WriteResFile(resName, pHeader->uiResSecOffset + pIndex[iteIndex].uiOffset, pIndex[iteIndex].uiCmpSize))
-			{
-				std::cout << "Failed!!" << " Sequence:" << pIndex[iteIndex].uiSequence << std::endl;
-			}
-		}
-
-		delete[] pCMV6Header;
-		delete[] pCMV6Index;
 		return true;
 	}
+
 	return false;
 }
 
-bool CMV6Pack::WriteResFile(std::wstring& wsRes, std::streampos posRes, size_t szRes)
+bool CMV6Pack::UnPackSingleRes(unsigned int uiSequence)
 {
-	m_ofsRES.open(m_wsCMV + L"_Unpack/" + wsRes, std::ios::binary);
-	if (m_ofsRES.is_open())
+	if (uiSequence <= m_Header.uiResCount)
+	{
+		std::wstring fileName = MakeFileName(uiSequence, m_vecDescriptor[uiSequence].uiType);
+
+		return WriteRes(fileName, m_vecDescriptor[uiSequence].uiOffset + m_Header.uiResSecOffset, m_vecDescriptor[uiSequence].uiCmpSize);
+	}
+
+	return false;
+}
+
+char* CMV6Pack::GetResToBuffer(std::streampos posRes, size_t szRes)
+{
+	if (m_ifsCMV.is_open())
 	{
 		m_ifsCMV.seekg(posRes);
 
@@ -101,14 +140,27 @@ bool CMV6Pack::WriteResFile(std::wstring& wsRes, std::streampos posRes, size_t s
 		}
 		else
 		{
-			return false;
+			return nullptr;
 		}
 
-		m_ofsRES.write(m_pRes, szRes);
+		return m_pRes;
+	}
+
+	return nullptr;
+}
+
+bool CMV6Pack::WriteRes(std::wstring wsRes, std::streampos posRes, size_t szRes)
+{
+	m_ofsRES.open(m_wsPath + wsRes, std::ios::binary);
+	if (m_ofsRES.is_open())
+	{
+		m_ofsRES.write(GetResToBuffer(posRes, szRes), szRes);
 
 		m_ofsRES.flush();
 		m_ofsRES.close();
+
 		return true;
 	}
+
 	return false;
 }

@@ -1,5 +1,6 @@
 #include "JBPD.h"
-#include "detours.h"
+#include "..\Detours\detours.h"
+#include "..\CMV6PackEditor\CMV6PackEditor.h"
 
 
 struct ImageSecData
@@ -109,7 +110,7 @@ VOID DumpImage(PCHAR pBitMapBuffer, LPCWSTR lpFilePath)
 //Make Full Path Of Dump File
 VOID MakeFileName(DWORD dwSequence)
 {
-	swprintf_s(g_lpFilePathBuffer, L"dump\\%08d.bmp", dwSequence);
+	swprintf_s(g_lpFilePathBuffer, L"Dump\\%08d.bmp", dwSequence);
 }
 
 PBYTE __fastcall newGetJBPD(PBYTE* pTHIS, DWORD dwEDX, DWORD dwSequence, PDWORD szJBPD)
@@ -157,7 +158,7 @@ VOID InitDecodeInfo()
 	InitBMPInfo(&g_bFile, &g_bInfo);
 }
 
-BOOL LoadJBPD(LPCWSTR lpJBPDFileName, PCHAR pJBPDBuffer , PDWORD szJBPDFile)
+BOOL LoadJBPD(LPCWSTR lpJBPDFileName, PCHAR pJBPDBuffer, PDWORD szJBPDFile)
 {
 	*szJBPDFile = 0;
 	errno_t err = 0;
@@ -213,12 +214,66 @@ VOID ReDoDecodeJBPDFromeFile()
 
 VOID UnPackCMV()
 {
+	CreateDirectoryW(L"Unpack", NULL);
+	CreateDirectoryW(L"Dump", NULL);
+
 	while (true)
 	{
+		BOOL isSingle = FALSE;
+		BOOL isDecode = FALSE;
 		std::wstring cmvFile;
-		std::wcout << "Waitting For Command" << std::endl;
+		std::wstring jbpdFile;
+
+		std::wcout
+			<< L"Decode Single JBPD Input 1" << '\n'
+			<< L"Process CMV File Input 0" << std::endl;
+		std::wcin >> isSingle;
+
+		if (isSingle)
+		{
+			JBPDToBMPThread();
+			return;
+		}
+
+		std::wcout
+			<< "Waitting For Command" << '\n'
+			<< "Input File Name" << std::endl;
 		std::wcin >> cmvFile;
-		//CMV6 cmv6(cmvFile, true);
+
+		std::wcout << "Is Decode JBPD (1 = T / 0 = F) (If Not Will Unpack All Resources(.JBPD / .Ogg)" << std::endl;
+		std::wcin >> isDecode;
+
+		if (isDecode)
+		{
+			std::wcout << L"Dump Start Will Save File In Dump Folder. It May Take A Few Minutes\n" << std::endl;
+		}
+		else
+		{
+			std::wcout << L"Unpack Start Will Save File In Unpack Folder.\n" << std::endl;
+		}
+
+		CMV6Pack cmv(cmvFile, L"Unpack\\");
+
+		if (isDecode)
+		{
+			for (CMV6IndexDescriptor& descriptor : cmv.m_vecDescriptor)
+			{
+				if (descriptor.uiType == 0)
+				{
+					cmv.UnPackSingleRes(descriptor.uiSequence);
+					continue;
+				}
+
+				MakeFileName(descriptor.uiSequence);
+
+				JBPDDecodeToBitMap(g_lpFilePathBuffer, cmv.GetResToBuffer(descriptor.uiOffset + cmv.m_Header.uiResSecOffset, descriptor.uiCmpSize), descriptor.uiCmpSize);
+			}
+		}
+		else
+		{
+			cmv.UnPackAllRes();
+		}
+
 	}
 }
 
