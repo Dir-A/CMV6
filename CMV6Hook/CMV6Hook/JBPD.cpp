@@ -1,6 +1,8 @@
 #include "JBPD.h"
 #include "..\Detours\detours.h"
 #include "..\CMV6PackEditor\CMV6PackEditor.h"
+#include "..\libwebp\encode.h";
+#pragma comment(lib,"..\\libwebp\\libwebp.lib")
 
 
 struct ImageSecData
@@ -93,24 +95,53 @@ VOID MergeImage(ImageSecData* lpImageSecData, PCHAR pMergeBuffer)
 	}
 }
 
-//Save BitMap RawData As BMP Format
-VOID DumpImage(PCHAR pBitMapBuffer, LPCWSTR lpFilePath)
+//Fast Use To Dynamic Dump Frame
+VOID SaveAsBmp(LPCWSTR lpFilePath, PCHAR pBitMapBuffer, DWORD szFile)
 {
+	lstrcatW((LPWSTR)lpFilePath, L".bmp");
 	HANDLE hFile = CreateFileW(lpFilePath, GENERIC_WRITE, FILE_SHARE_READ, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
 	if (hFile != INVALID_HANDLE_VALUE)
 	{
 		WriteFile(hFile, &g_bFile, sizeof(BITMAPFILEHEADER), NULL, NULL);
 		WriteFile(hFile, &g_bInfo, sizeof(BITMAPINFOHEADER), NULL, NULL);
-		WriteFile(hFile, pBitMapBuffer, 0x384000, NULL, NULL);
+		WriteFile(hFile, pBitMapBuffer, szFile, NULL, NULL);
+
 		FlushFileBuffers(hFile);
 		CloseHandle(hFile);
+	}
+}
+
+//Lossless WebP Format But Slow Encoding Speed Use To Decode JBPD By Calling DecJBPD
+VOID SaveAsWebP(LPCWSTR lpFilePath, PCHAR pBitMapBuffer, DWORD szFile)
+{
+	lstrcatW((LPWSTR)lpFilePath, L".webp");
+	HANDLE hFile = CreateFileW(lpFilePath, GENERIC_WRITE, FILE_SHARE_READ, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+	if (hFile != INVALID_HANDLE_VALUE)
+	{
+		//Destroy Alpha Channel
+		for (size_t iteBitMap = 3; iteBitMap < szFile; iteBitMap++)
+		{
+			pBitMapBuffer[iteBitMap] = 0xFF;
+			iteBitMap += 3;
+		}
+
+		uint8_t* pWebP = nullptr;
+		size_t szWebP = WebPEncodeLosslessBGRA((uint8_t*)pBitMapBuffer, 1280, 720, 1280 * 4, &pWebP);
+
+		WriteFile(hFile, pWebP, szWebP, NULL, NULL);
+
+		FlushFileBuffers(hFile);
+		CloseHandle(hFile);
+		WebPFree(pWebP);
+
+		std::wcout << L"Dump:" << lpFilePath << std::endl;
 	}
 }
 
 //Make Full Path Of Dump File
 VOID MakeFileName(DWORD dwSequence)
 {
-	swprintf_s(g_lpFilePathBuffer, L"Dump\\%08d.bmp", dwSequence);
+	swprintf_s(g_lpFilePathBuffer, L"Dump\\%08d", dwSequence);
 }
 
 PBYTE __fastcall newGetJBPD(PBYTE* pTHIS, DWORD dwEDX, DWORD dwSequence, PDWORD szJBPD)
@@ -122,7 +153,7 @@ PBYTE __fastcall newGetJBPD(PBYTE* pTHIS, DWORD dwEDX, DWORD dwSequence, PDWORD 
 DWORD WINAPI newDecJBPD(ImageSecData* lpImageSecData, ImageSecWidthBites* lpImageSecWidthBites, PBYTE pJBPD, PDWORD szJBPD, DWORD dwUnknow)
 {
 	MergeImage(lpImageSecData, g_pBitMapBuffer);
-	DumpImage(g_pBitMapBuffer, g_lpFilePathBuffer);
+	SaveAsBmp(g_lpFilePathBuffer, g_pBitMapBuffer, g_bInfo.biSizeImage);
 	return orgDecJBPD(lpImageSecData, lpImageSecWidthBites, pJBPD, szJBPD, dwUnknow);
 }
 
@@ -186,11 +217,11 @@ BOOL LoadJBPD(LPCWSTR lpJBPDFileName, PCHAR pJBPDBuffer, PDWORD szJBPDFile)
 	return FALSE;
 }
 
-VOID JBPDDecodeToBitMap(LPCWSTR lpBMPFileName, PCHAR pJBPD, DWORD szJBPD)
+VOID JBPDDecodeToWebP(LPCWSTR lpBMPFileName, PCHAR pJBPD, DWORD szJBPD)
 {
 	orgDecJBPD(&g_lpSecData, &g_lpSecBites, (PBYTE)pJBPD, &szJBPD, 0);
 	MergeImage(&g_lpSecData, g_pBitMapBuffer);
-	DumpImage(g_pBitMapBuffer, lpBMPFileName);
+	SaveAsWebP(lpBMPFileName, g_pBitMapBuffer, g_bInfo.biSizeImage);
 }
 
 VOID JBPDDecodeFromeFile(std::wstring strJBPDFile)
@@ -198,7 +229,7 @@ VOID JBPDDecodeFromeFile(std::wstring strJBPDFile)
 	static DWORD szJBPD = 0;
 
 	LoadJBPD(strJBPDFile.c_str(), g_pJBPDBuffer, &szJBPD);
-	JBPDDecodeToBitMap((strJBPDFile + L".bmp").c_str(), g_pJBPDBuffer, szJBPD);
+	JBPDDecodeToWebP(strJBPDFile.c_str(), g_pJBPDBuffer, szJBPD);
 }
 
 VOID ReDoDecodeJBPDFromeFile()
@@ -266,7 +297,7 @@ VOID UnPackCMV()
 
 				MakeFileName(descriptor.uiSequence);
 
-				JBPDDecodeToBitMap(g_lpFilePathBuffer, cmv.GetResToBuffer(descriptor.uiOffset + cmv.m_Header.uiResSecOffset, descriptor.uiCmpSize), descriptor.uiCmpSize);
+				JBPDDecodeToWebP(g_lpFilePathBuffer, cmv.GetResToBuffer(descriptor.uiOffset + cmv.m_Header.uiResSecOffset, descriptor.uiCmpSize), descriptor.uiCmpSize);
 			}
 		}
 		else
@@ -290,7 +321,7 @@ VOID CMV6FrameDump()
 	DetourTransactionCommit();
 }
 
-//Set Console Input .JBPD File Path Decode To BitMap
+//Set Console Input .JBPD File Path Decode To WebP
 VOID JBPDToBMPThread()
 {
 	InitDecodeInfo();

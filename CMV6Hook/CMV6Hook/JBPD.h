@@ -3,7 +3,7 @@
 #include <iostream>
 
 VOID InitDecodeInfo();
-VOID JBPDDecodeToBitMap(LPCWSTR lpBMPFileName, PCHAR pJBPD, DWORD szJBPD);
+VOID JBPDDecodeToWebP(LPCWSTR lpBMPFileName, PCHAR pJBPD, DWORD szJBPD);
 VOID JBPDDecodeFromeFile(std::wstring strJBPDFile);
 
 VOID CMV6FrameDump();
