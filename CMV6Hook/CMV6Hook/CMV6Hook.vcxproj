@@ -148,19 +148,19 @@
     <ClCompile Include="..\Detours\disasm.cpp" />
     <ClCompile Include="..\Detours\image.cpp" />
     <ClCompile Include="..\Detours\modules.cpp" />
-    <ClCompile Include="CMV6.cpp" />
     <ClCompile Include="dllmain.cpp" />
     <ClCompile Include="JBPD.cpp" />
     <ClCompile Include="Tools.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\Detours\detours.h" />
-    <ClInclude Include="CMV6.h" />
     <ClInclude Include="JBPD.h" />
     <ClInclude Include="Tools.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="cpp.hint" />
+    <ProjectReference Include="..\CMV6PackEditor\CMV6PackEditor.vcxproj">
+      <Project>{cc56024a-427c-4d4c-b4b7-cb5238302413}</Project>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

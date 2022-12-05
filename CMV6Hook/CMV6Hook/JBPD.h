@@ -1,9 +1,11 @@
 #pragma once
 #include <Windows.h>
+#include <iostream>
 
 VOID InitDecodeInfo();
 VOID JBPDDecodeToBitMap(LPCWSTR lpBMPFileName, PCHAR pJBPD, DWORD szJBPD);
+VOID JBPDDecodeFromeFile(std::wstring strJBPDFile);
 
-VOID UnPackCMVThread();
-VOID CvtJBPDToBMP();
 VOID CMV6FrameDump();
+VOID JBPDToBMPThread();
+VOID UnPackCMVThread();

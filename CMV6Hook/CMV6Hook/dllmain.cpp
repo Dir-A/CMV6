@@ -1,10 +1,12 @@
 #include <Windows.h>
 #include "Tools.h"
 #include "JBPD.h"
+#include "..\CMV6PackEditor\CMV6PackEditor.h"
 
 
 VOID StartHook()
 {
+	CMV6 cm6(L"1234");
 	UnPackCMVThread();
 }
 

@@ -1,7 +1,5 @@
 #include "JBPD.h"
-#include <iostream>
 #include "detours.h"
-#include "CMV6.h"
 
 
 struct ImageSecData
@@ -48,8 +46,7 @@ BITMAPINFOHEADER g_bInfo = { 0 };
 ImageSecData g_lpSecData = { 0 };
 ImageSecWidthBites g_lpSecBites = { 0 };
 
-WCHAR g_lpFileName[0xFF] = { 0 };
-WCHAR g_lpFilePath[0xFF] = { 0 };
+WCHAR g_lpFilePathBuffer[0xFF] = { 0 };
 PCHAR g_pBitMapBuffer = (PCHAR)malloc(0x384000);
 PCHAR g_pJBPDBuffer = (PCHAR)malloc(0x384000);
 
@@ -59,66 +56,60 @@ pGetJBPD orgGetJBPD = (pGetJBPD)0x004333D0;
 typedef DWORD(WINAPI* pDecJBPD)(ImageSecData* lpImageSecData, ImageSecWidthBites* lpImageSecWidthBites, PBYTE pJBPD, PDWORD szJBPD, DWORD dwUnknow);
 pDecJBPD orgDecJBPD = (pDecJBPD)0x00518490;
 
-//perLineBytes = 0x400
-//Hight = 0x100; b c d e = 0xD0
-PCHAR MergeImage(ImageSecData* lpImageSecData)
+//MergeImage Frome 15 Sectors
+//PerLineBytes = 0x400
+//ImageHight 1,2,3,4,5,6,7,8,9 = 0x100; A,B,C,D,E = 0xD0
+VOID MergeImage(ImageSecData* lpImageSecData, PCHAR pMergeBuffer)
 {
-	PCHAR pImage = g_pBitMapBuffer;
-
 	for (size_t iteHight = 0; iteHight < 0x100; iteHight++)
 	{
-		memcpy(&pImage[0x400 * 0], &lpImageSecData->pSec0[0x400 * iteHight], 0x400);
-		memcpy(&pImage[0x400 * 1], &lpImageSecData->pSec1[0x400 * iteHight], 0x400);
-		memcpy(&pImage[0x400 * 2], &lpImageSecData->pSec2[0x400 * iteHight], 0x400);
-		memcpy(&pImage[0x400 * 3], &lpImageSecData->pSec3[0x400 * iteHight], 0x400);
-		memcpy(&pImage[0x400 * 4], &lpImageSecData->pSec4[0x400 * iteHight], 0x400);
-		pImage += 0x400 * 5;
+		memcpy(&pMergeBuffer[0x400 * 0], &lpImageSecData->pSec0[0x400 * iteHight], 0x400);
+		memcpy(&pMergeBuffer[0x400 * 1], &lpImageSecData->pSec1[0x400 * iteHight], 0x400);
+		memcpy(&pMergeBuffer[0x400 * 2], &lpImageSecData->pSec2[0x400 * iteHight], 0x400);
+		memcpy(&pMergeBuffer[0x400 * 3], &lpImageSecData->pSec3[0x400 * iteHight], 0x400);
+		memcpy(&pMergeBuffer[0x400 * 4], &lpImageSecData->pSec4[0x400 * iteHight], 0x400);
+		pMergeBuffer += 0x400 * 5;
 	}
 
 	for (size_t iteHight = 0; iteHight < 0x100; iteHight++)
 	{
-		memcpy(&pImage[0x400 * 0], &lpImageSecData->pSec5[0x400 * iteHight], 0x400);
-		memcpy(&pImage[0x400 * 1], &lpImageSecData->pSec6[0x400 * iteHight], 0x400);
-		memcpy(&pImage[0x400 * 2], &lpImageSecData->pSec7[0x400 * iteHight], 0x400);
-		memcpy(&pImage[0x400 * 3], &lpImageSecData->pSec8[0x400 * iteHight], 0x400);
-		memcpy(&pImage[0x400 * 4], &lpImageSecData->pSec9[0x400 * iteHight], 0x400);
-		pImage += 0x400 * 5;
+		memcpy(&pMergeBuffer[0x400 * 0], &lpImageSecData->pSec5[0x400 * iteHight], 0x400);
+		memcpy(&pMergeBuffer[0x400 * 1], &lpImageSecData->pSec6[0x400 * iteHight], 0x400);
+		memcpy(&pMergeBuffer[0x400 * 2], &lpImageSecData->pSec7[0x400 * iteHight], 0x400);
+		memcpy(&pMergeBuffer[0x400 * 3], &lpImageSecData->pSec8[0x400 * iteHight], 0x400);
+		memcpy(&pMergeBuffer[0x400 * 4], &lpImageSecData->pSec9[0x400 * iteHight], 0x400);
+		pMergeBuffer += 0x400 * 5;
 	}
 
 	for (size_t iteHight = 0; iteHight < 0xD0; iteHight++)
 	{
-		memcpy(&pImage[0x400 * 0], &lpImageSecData->pSecA[0x400 * iteHight], 0x400);
-		memcpy(&pImage[0x400 * 1], &lpImageSecData->pSecB[0x400 * iteHight], 0x400);
-		memcpy(&pImage[0x400 * 2], &lpImageSecData->pSecC[0x400 * iteHight], 0x400);
-		memcpy(&pImage[0x400 * 3], &lpImageSecData->pSecD[0x400 * iteHight], 0x400);
-		memcpy(&pImage[0x400 * 4], &lpImageSecData->pSecE[0x400 * iteHight], 0x400);
-		pImage += 0x400 * 5;
+		memcpy(&pMergeBuffer[0x400 * 0], &lpImageSecData->pSecA[0x400 * iteHight], 0x400);
+		memcpy(&pMergeBuffer[0x400 * 1], &lpImageSecData->pSecB[0x400 * iteHight], 0x400);
+		memcpy(&pMergeBuffer[0x400 * 2], &lpImageSecData->pSecC[0x400 * iteHight], 0x400);
+		memcpy(&pMergeBuffer[0x400 * 3], &lpImageSecData->pSecD[0x400 * iteHight], 0x400);
+		memcpy(&pMergeBuffer[0x400 * 4], &lpImageSecData->pSecE[0x400 * iteHight], 0x400);
+		pMergeBuffer += 0x400 * 5;
 	}
-
-	return g_pBitMapBuffer;
 }
 
-VOID DumpImage(ImageSecData* lpImageSecData, LPCWSTR lpFilePath)
+//Save BitMap RawData As BMP Format
+VOID DumpImage(PCHAR pBitMapBuffer, LPCWSTR lpFilePath)
 {
-	MergeImage(lpImageSecData);
-
 	HANDLE hFile = CreateFileW(lpFilePath, GENERIC_WRITE, FILE_SHARE_READ, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
 	if (hFile != INVALID_HANDLE_VALUE)
 	{
 		WriteFile(hFile, &g_bFile, sizeof(BITMAPFILEHEADER), NULL, NULL);
 		WriteFile(hFile, &g_bInfo, sizeof(BITMAPINFOHEADER), NULL, NULL);
-		WriteFile(hFile, g_pBitMapBuffer, 0x384000, NULL, NULL);
+		WriteFile(hFile, pBitMapBuffer, 0x384000, NULL, NULL);
 		FlushFileBuffers(hFile);
 		CloseHandle(hFile);
 	}
 }
 
+//Make Full Path Of Dump File
 VOID MakeFileName(DWORD dwSequence)
 {
-	wcscpy_s(g_lpFilePath, L"dump\\");
-	_itow_s(dwSequence, g_lpFileName, 10);
-	wcscat_s(g_lpFileName, L".bmp");
-	wcscat_s(g_lpFilePath, g_lpFileName);
+	swprintf_s(g_lpFilePathBuffer, L"dump\\%08d.bmp", dwSequence);
 }
 
 PBYTE __fastcall newGetJBPD(PBYTE* pTHIS, DWORD dwEDX, DWORD dwSequence, PDWORD szJBPD)
@@ -129,25 +120,28 @@ PBYTE __fastcall newGetJBPD(PBYTE* pTHIS, DWORD dwEDX, DWORD dwSequence, PDWORD 
 
 DWORD WINAPI newDecJBPD(ImageSecData* lpImageSecData, ImageSecWidthBites* lpImageSecWidthBites, PBYTE pJBPD, PDWORD szJBPD, DWORD dwUnknow)
 {
-	DumpImage(lpImageSecData, g_lpFilePath);
+	MergeImage(lpImageSecData, g_pBitMapBuffer);
+	DumpImage(g_pBitMapBuffer, g_lpFilePathBuffer);
 	return orgDecJBPD(lpImageSecData, lpImageSecWidthBites, pJBPD, szJBPD, dwUnknow);
 }
 
-VOID InitBMPInfo()
+//Set BMP Format File Info
+VOID InitBMPInfo(BITMAPFILEHEADER* lpBitMapFile, BITMAPINFOHEADER* lpBitMapInfo)
 {
-	g_bFile.bfType = 0x4D42;
-	g_bFile.bfSize = 0x384036;
-	g_bFile.bfOffBits = sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER);
+	lpBitMapFile->bfType = 0x4D42;
+	lpBitMapFile->bfSize = 0x384036;
+	lpBitMapFile->bfOffBits = sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER);
 
-	g_bInfo.biSize = 40;
-	g_bInfo.biWidth = 1280;
-	g_bInfo.biHeight = 720;
-	g_bInfo.biPlanes = 1;
-	g_bInfo.biBitCount = 32;
-	g_bInfo.biCompression = 0;
-	g_bInfo.biSizeImage = 0x384000;
+	lpBitMapInfo->biSize = 40;
+	lpBitMapInfo->biWidth = 1280;
+	lpBitMapInfo->biHeight = 720;
+	lpBitMapInfo->biPlanes = 1;
+	lpBitMapInfo->biBitCount = 32;
+	lpBitMapInfo->biCompression = 0;
+	lpBitMapInfo->biSizeImage = 0x384000;
 }
 
+//Set JBPD Fromat Processing Conditions
 VOID InitJBPDInfo(ImageSecData* lpImageSecData, ImageSecWidthBites* lpImageSecWidthBites)
 {
 	for (size_t iteSec = 0; iteSec < 0xF; iteSec++)
@@ -160,15 +154,16 @@ VOID InitJBPDInfo(ImageSecData* lpImageSecData, ImageSecWidthBites* lpImageSecWi
 VOID InitDecodeInfo()
 {
 	InitJBPDInfo(&g_lpSecData, &g_lpSecBites);
-	InitBMPInfo();
+	InitBMPInfo(&g_bFile, &g_bInfo);
 }
 
-BOOL LoadJBPD(LPCWSTR lpJBPDFile, PCHAR pJBPDBuffer ,PDWORD szJBPDFile)
+BOOL LoadJBPD(LPCWSTR lpJBPDFileName, PCHAR pJBPDBuffer , PDWORD szJBPDFile)
 {
+	*szJBPDFile = 0;
 	errno_t err = 0;
 	FILE* fpJBPD = nullptr;
 
-	err = _wfopen_s(&fpJBPD, lpJBPDFile, L"rb");
+	err = _wfopen_s(&fpJBPD, lpJBPDFileName, L"rb");
 	if (fpJBPD && !err)
 	{
 		fseek(fpJBPD, 0, SEEK_END);
@@ -193,7 +188,8 @@ BOOL LoadJBPD(LPCWSTR lpJBPDFile, PCHAR pJBPDBuffer ,PDWORD szJBPDFile)
 VOID JBPDDecodeToBitMap(LPCWSTR lpBMPFileName, PCHAR pJBPD, DWORD szJBPD)
 {
 	orgDecJBPD(&g_lpSecData, &g_lpSecBites, (PBYTE)pJBPD, &szJBPD, 0);
-	DumpImage(&g_lpSecData, lpBMPFileName);
+	MergeImage(&g_lpSecData, g_pBitMapBuffer);
+	DumpImage(g_pBitMapBuffer, lpBMPFileName);
 }
 
 VOID JBPDDecodeFromeFile(std::wstring strJBPDFile)
@@ -222,13 +218,13 @@ VOID UnPackCMV()
 		std::wstring cmvFile;
 		std::wcout << "Waitting For Command" << std::endl;
 		std::wcin >> cmvFile;
-		CMV6 cmv6(cmvFile, true);
+		//CMV6 cmv6(cmvFile, true);
 	}
 }
 
 VOID CMV6FrameDump()
 {
-	InitBMPInfo();
+	InitBMPInfo(&g_bFile, &g_bInfo);
 
 	DetourRestoreAfterWith();
 	DetourTransactionBegin();
@@ -239,12 +235,14 @@ VOID CMV6FrameDump()
 	DetourTransactionCommit();
 }
 
-VOID CvtJBPDToBMP()
+//Set Console Input .JBPD File Path Decode To BitMap
+VOID JBPDToBMPThread()
 {
 	InitDecodeInfo();
 	CreateThread(NULL, NULL, (LPTHREAD_START_ROUTINE)ReDoDecodeJBPDFromeFile, NULL, NULL, NULL);
 }
 
+//Set Console Input .CMV File Path Unpack All Resources And Decode JBPD
 VOID UnPackCMVThread()
 {
 	InitDecodeInfo();

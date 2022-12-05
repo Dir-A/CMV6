@@ -42,9 +42,6 @@
     <ClCompile Include="JBPD.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="CMV6.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\Detours\detours.h">
@@ -56,11 +53,5 @@
     <ClInclude Include="JBPD.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="CMV6.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="cpp.hint" />
   </ItemGroup>
 </Project>
