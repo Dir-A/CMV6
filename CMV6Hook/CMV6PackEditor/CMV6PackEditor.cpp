@@ -115,7 +115,7 @@ bool CMV6Pack::UnPackSingleRes(unsigned int uiSequence)
 	return false;
 }
 
-char* CMV6Pack::GetResToBuffer(std::streampos posRes, size_t szRes)
+char* CMV6Pack::GetResToBuffer(size_t posRes, size_t szRes)
 {
 	if (m_ifsCMV.is_open())
 	{
@@ -149,7 +149,7 @@ char* CMV6Pack::GetResToBuffer(std::streampos posRes, size_t szRes)
 	return nullptr;
 }
 
-bool CMV6Pack::WriteRes(std::wstring wsRes, std::streampos posRes, size_t szRes)
+bool CMV6Pack::WriteRes(std::wstring wsRes, size_t posRes, size_t szRes)
 {
 	m_ofsRES.open(m_wsPath + wsRes, std::ios::binary);
 	if (m_ofsRES.is_open())

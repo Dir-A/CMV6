@@ -1,6 +1,6 @@
 #include <Windows.h>
 #include "Tools.h"
-#include "JBPD.h"
+#include "JBPX.h"
 
 VOID StartHook()
 {
@@ -23,5 +23,5 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD  ul_reason_for_call, LPVOID lpReser
 	return TRUE;
 }
 
-VOID _declspec(dllexport) DirA(){}
+EXTERN_C VOID _declspec(dllexport) DirA(){}
 

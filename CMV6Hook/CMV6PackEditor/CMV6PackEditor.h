@@ -3,19 +3,20 @@
 #include <fstream>
 #include <vector>
 
+//Some As CMV4 CMV3
 struct CMV6Header
 {
-	char aSignature[4];
+	char aSignature[4]; //CMV6 CMV4 CMV3
 	unsigned int uiResSecOffset;
 	unsigned int uiFileSize;
-	unsigned int uiUnknow0;
+	unsigned int uiUnknow0; //Not Used
 	unsigned int uiResCount;
 	unsigned int uiFrameRate;
-	unsigned int uiUnknow1;
+	unsigned int uiFrameRateTime; // Per Second
 	unsigned int uiWide;
 	unsigned int uiHigh;
 	unsigned int uiBitCount;
-	unsigned int uiUnknow2;
+	unsigned int uiAudio; // About Audio File Load If 0x0 Game Will Crash In MOG_INputMemory
 	//CMV6IndexDescriptor[uiResCount + 1];
 };
 
@@ -45,7 +46,7 @@ public:
 
 private:
 	void InitPackInfo();
-	bool WriteRes(std::wstring wsRes, std::streampos posRes, size_t szRes);
+	bool WriteRes(std::wstring wsRes, size_t posRes, size_t szRes);
 
 public:
 	CMV6Pack();
@@ -54,5 +55,5 @@ public:
 	bool UnPackAllRes();
 	bool UnPackSingleRes(unsigned int uiSequence);
 	static std::wstring MakeFileName(unsigned int uiSequence, unsigned int uiType);
-	char* GetResToBuffer(std::streampos posRes, size_t szRes);
+	char* GetResToBuffer(size_t posRes, size_t szRes);
 };

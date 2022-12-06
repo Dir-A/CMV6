@@ -77,6 +77,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableUAC>false</EnableUAC>
+      <IgnoreSpecificDefaultLibraries>libcmt.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -86,12 +87,12 @@
     <ClCompile Include="..\Detours\image.cpp" />
     <ClCompile Include="..\Detours\modules.cpp" />
     <ClCompile Include="dllmain.cpp" />
-    <ClCompile Include="JBPD.cpp" />
+    <ClCompile Include="JBPX.cpp" />
     <ClCompile Include="Tools.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\Detours\detours.h" />
-    <ClInclude Include="JBPD.h" />
+    <ClInclude Include="JBPX.h" />
     <ClInclude Include="Tools.h" />
   </ItemGroup>
   <ItemGroup>
