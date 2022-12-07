@@ -81,17 +81,17 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\Detours\creatwth.cpp" />
-    <ClCompile Include="..\Detours\detours.cpp" />
-    <ClCompile Include="..\Detours\disasm.cpp" />
-    <ClCompile Include="..\Detours\image.cpp" />
-    <ClCompile Include="..\Detours\modules.cpp" />
+    <ClCompile Include="..\libs\detours\creatwth.cpp" />
+    <ClCompile Include="..\libs\detours\detours.cpp" />
+    <ClCompile Include="..\libs\detours\disasm.cpp" />
+    <ClCompile Include="..\libs\detours\image.cpp" />
+    <ClCompile Include="..\libs\detours\modules.cpp" />
     <ClCompile Include="dllmain.cpp" />
     <ClCompile Include="JBPX.cpp" />
     <ClCompile Include="Tools.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\Detours\detours.h" />
+    <ClInclude Include="..\libs\detours\detours.h" />
     <ClInclude Include="JBPX.h" />
     <ClInclude Include="Tools.h" />
   </ItemGroup>

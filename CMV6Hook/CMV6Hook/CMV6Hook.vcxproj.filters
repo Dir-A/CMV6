@@ -13,28 +13,13 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
-    <Filter Include="Detours">
-      <UniqueIdentifier>{130cc5ba-fb41-4a39-aaad-ab841f95a7d6}</UniqueIdentifier>
+    <Filter Include="detours">
+      <UniqueIdentifier>{69a47fba-9ecc-4bc0-9aef-a179c09d4c53}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp">
       <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Detours\image.cpp">
-      <Filter>Detours</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Detours\modules.cpp">
-      <Filter>Detours</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Detours\creatwth.cpp">
-      <Filter>Detours</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Detours\detours.cpp">
-      <Filter>Detours</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Detours\disasm.cpp">
-      <Filter>Detours</Filter>
     </ClCompile>
     <ClCompile Include="Tools.cpp">
       <Filter>Source Files</Filter>
@@ -42,16 +27,31 @@
     <ClCompile Include="JBPX.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\libs\detours\detours.cpp">
+      <Filter>detours</Filter>
+    </ClCompile>
+    <ClCompile Include="..\libs\detours\disasm.cpp">
+      <Filter>detours</Filter>
+    </ClCompile>
+    <ClCompile Include="..\libs\detours\image.cpp">
+      <Filter>detours</Filter>
+    </ClCompile>
+    <ClCompile Include="..\libs\detours\modules.cpp">
+      <Filter>detours</Filter>
+    </ClCompile>
+    <ClCompile Include="..\libs\detours\creatwth.cpp">
+      <Filter>detours</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\Detours\detours.h">
-      <Filter>Detours</Filter>
-    </ClInclude>
     <ClInclude Include="Tools.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="JBPX.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\libs\detours\detours.h">
+      <Filter>detours</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

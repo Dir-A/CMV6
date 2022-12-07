@@ -1,8 +1,8 @@
 #include "JBPX.h"
-#include "..\Detours\detours.h"
 #include "..\CMV6PackEditor\CMV6PackEditor.h"
-#include "..\libwebp\encode.h"
-#pragma comment(lib,"..\\libwebp\\libwebp.lib")
+#include "..\libs\detours\detours.h"
+#include "..\libs\libwebp\encode.h"
+#pragma comment(lib,"..\\libs\\libwebp\\libwebp.lib")
 
 
 struct ImageSecData
@@ -244,7 +244,7 @@ VOID ReDoDecodeJBPDFromeFile()
 	std::wstring jbpdFile;
 	while (true)
 	{
-		std::wcout << L"Input JBPD File Name" << std::endl;
+		std::wcout << L"Input JBPX File Name" << std::endl;
 		std::wcin >> jbpdFile;
 		JBPDDecodeFromeFile(jbpdFile);
 	}
@@ -263,7 +263,7 @@ VOID UnPackCMV()
 		std::wstring jbpdFile;
 
 		std::wcout
-			<< L"Decode Single JBPD Input 1" << '\n'
+			<< L"Decode Single JBPX Input 1" << '\n'
 			<< L"Process CMV File Input 0" << std::endl;
 		std::wcin >> isSingle;
 
@@ -278,7 +278,7 @@ VOID UnPackCMV()
 			<< "Input File Name" << std::endl;
 		std::wcin >> cmvFile;
 
-		std::wcout << "Is Decode JBPD (1 = T / 0 = F) (If Not Will Unpack All Resources(.JBPD / .Ogg)" << std::endl;
+		std::wcout << "Is Decode JBPD (1 = T / 0 = F) (If Not Will Unpack All Resources(.JBPX / .Ogg)" << std::endl;
 		std::wcin >> isDecode;
 
 		if (isDecode)

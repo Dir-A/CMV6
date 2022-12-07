@@ -1,7 +1,7 @@
 #include <iostream>
 #include "..\CMV6PackEditor\CMV6PackEditor.h"
-#include "..\libwebp\encode.h";
-#pragma comment(lib,"..\\libwebp\\libwebp.lib")
+#include "..\libs\libwebp\encode.h";
+#pragma comment(lib,"..\\libs\\libwebp\\libwebp.lib")
 
 void EncodeWebP()
 {
@@ -48,37 +48,20 @@ void EncodeWebP()
 	}
 }
 
-unsigned int GetFileSize(std::ifstream& fsFile)
-{
-	std::streamoff szFile = 0;
-	std::streamoff oldOff = fsFile.tellg();
-
-	fsFile.seekg(0, std::ios::end);
-	szFile = fsFile.tellg();
-	fsFile.seekg(oldOff, std::ios::beg);
-
-	return (unsigned int)szFile;
-}
-
 void PackCMV()
 {
-	size_t imagePerRawSize = 0x2A3000;
-	size_t imageFileCount = 2907;
-	wchar_t oggFileName[] = L"00002907.ogg";
-	wchar_t imageFileNameFormat[] = L"%08d.jbpd";
-	wchar_t imageFilePath[] = L"Unpack\\";
+	size_t resRawSize = 0x2A3000;
+	size_t resCount = 2907;
+	std::wstring resPath = L"Unpack\\";
 
-
-
+	//Create Pack OBJ
 	CMV6File::CMV6Pack newPack(L"new.cmv");
-
 
 	//Init File Header
 	newPack.m_Header.aSignature[0] = 'C';
 	newPack.m_Header.aSignature[1] = 'M';
 	newPack.m_Header.aSignature[2] = 'V';
 	newPack.m_Header.aSignature[3] = '6';
-
 	newPack.m_Header.uiFrameRate = 24;
 	newPack.m_Header.uiFrameRateTime = 1;
 	newPack.m_Header.uiImageWidth = 1280;
@@ -86,34 +69,42 @@ void PackCMV()
 	newPack.m_Header.uiBitCount = 24;
 	newPack.m_Header.uiAudioFlag = 2;
 
+
 	//AddRes
 	CMV6File::CMV6IndexDescriptor descriptor = { 0 };
+	std::wstring resName;
+	std::ifstream ifsRes;
 	descriptor.uiType = 2;
-	wchar_t buffer[0xFF] = { 0 };
-	std::wstring fileName = imageFilePath;
-	std::ifstream iFile;
-	for (size_t iteFile = 0; iteFile < imageFileCount; iteFile++)
+	//Processing JBPX
+	for (size_t iteFile = 0; iteFile < resCount; iteFile++)
 	{
-		swprintf_s(buffer, imageFileNameFormat, iteFile);
-		iFile.open(fileName + buffer);
+		resName = resPath + newPack.MakeFileName(iteFile, 2);
+		ifsRes.open(resName);
 
-		if (iFile.is_open())
+		if (ifsRes.is_open())
 		{
 			descriptor.uiSequence = iteFile;
-			descriptor.uiCmpSize = GetFileSize(iFile);
-			descriptor.uiOrgSize = imagePerRawSize;
-			newPack.AddRes(&descriptor, fileName + buffer);
-			iFile.close();
+			descriptor.uiCmpSize = newPack.GetFileSize(ifsRes);
+			descriptor.uiOrgSize = resRawSize;
+			newPack.AddRes(descriptor, resName);
+			ifsRes.close();
 		}
 	}
 
-	descriptor.uiSequence = imageFileCount;
-	iFile.open(fileName + oggFileName);
-	descriptor.uiType = 0;
-	descriptor.uiCmpSize = GetFileSize(iFile);
-	descriptor.uiOrgSize = descriptor.uiCmpSize;
-	newPack.AddRes(&descriptor, fileName + oggFileName);
-	iFile.close();
+	//Processing Ogg
+	resName = resPath + newPack.MakeFileName(resCount, 0);
+	ifsRes.open(resName);
+	if (ifsRes.is_open())
+	{
+		descriptor.uiType = 0;
+		descriptor.uiSequence = resCount;
+		descriptor.uiCmpSize = newPack.GetFileSize(ifsRes);
+		descriptor.uiOrgSize = descriptor.uiCmpSize;
+
+		newPack.AddRes(descriptor, resName);
+		ifsRes.close();
+	}
+
 
 	//MakePack
 	newPack.MakeNewPack();

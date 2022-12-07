@@ -50,6 +50,10 @@ namespace CMV6File
 	public:
 		CMV6Editor();
 		~CMV6Editor();
+
+		void HeapReSize(size_t szRes);
+		static std::wstring MakeFileName(unsigned int uiSequence, unsigned int uiType);
+		static unsigned int GetFileSize(std::ifstream& fsFile);
 	};
 
 
@@ -60,16 +64,14 @@ namespace CMV6File
 
 	private:
 		void InitPackInfo();
-		bool WriteRes(std::wstring wsRes, size_t posRes, size_t szRes);
+		bool WriteRes(std::wstring& wsRes, size_t posRes, size_t szRes);
 
 	public:
 		CMV6Unpack(std::wstring wsCMV, std::wstring wsPath);
 
 		bool UnPackAllRes();
 		bool UnPackSingleRes(unsigned int uiSequence);
-		static std::wstring MakeFileName(unsigned int uiSequence, unsigned int uiType);
 		char* GetResToBuffer(size_t posRes, size_t szRes);
-
 
 	};
 
@@ -88,7 +90,7 @@ namespace CMV6File
 	public:
 		CMV6Pack(std::wstring wsPath);
 
-		void AddRes(CMV6IndexDescriptor* lpDescriptor, std::wstring wsResPath);
+		void AddRes(CMV6IndexDescriptor& lpDescriptor, std::wstring& wsResPath);
 		void MakeNewPack();
 	};
 }
