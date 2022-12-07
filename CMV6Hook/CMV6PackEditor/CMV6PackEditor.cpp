@@ -129,7 +129,7 @@ namespace CMV6File
 			std::wstring fileName;
 			for (CMV6IndexDescriptor& descriptor : m_vecDescriptor)
 			{
-				fileName = MakeFileName(descriptor.uiSequence, descriptor.uiType);
+				fileName = MakeFileName(descriptor.uiSequence, descriptor.uiResType);
 				WriteRes(fileName, descriptor.uiOffset + m_Header.uiResSecOffset, descriptor.uiCmpSize);
 
 			}
@@ -143,7 +143,7 @@ namespace CMV6File
 	{
 		if (uiSequence <= m_Header.uiResMaxSequence)
 		{
-			std::wstring fileName = MakeFileName(uiSequence, m_vecDescriptor[uiSequence].uiType);
+			std::wstring fileName = MakeFileName(uiSequence, m_vecDescriptor[uiSequence].uiResType);
 
 			return WriteRes(fileName, m_vecDescriptor[uiSequence].uiOffset + m_Header.uiResSecOffset, m_vecDescriptor[uiSequence].uiCmpSize);
 		}

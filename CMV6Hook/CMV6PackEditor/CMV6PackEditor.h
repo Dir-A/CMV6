@@ -6,7 +6,13 @@
 
 namespace CMV6File
 {
-	//Some As CMV4 CMV3
+	//CMV6File (Some As CMV4 CMV3)
+	/*
+	* CMV6FileHeader
+	* CMV6IndexDescriptor[uiResCount + 1];
+	* ResourcesData
+	*/
+
 	struct CMV6FileHeader
 	{
 		char aSignature[4]; //CMV6 CMV4 CMV3
@@ -20,8 +26,6 @@ namespace CMV6File
 		unsigned int uiImageHight;
 		unsigned int uiBitCount;
 		unsigned int uiAudioFlag; // About Audio File Load If 0x0 Game Will Crash In MOG_INputMemory
-		//CMV6IndexDescriptor[uiResCount + 1];
-		//Resources Data
 	};
 
 	struct CMV6IndexDescriptor
@@ -29,8 +33,15 @@ namespace CMV6File
 		unsigned int uiSequence; // Max = uiResCount
 		unsigned int uiCmpSize;
 		unsigned int uiOrgSize; //BitMap Size
-		unsigned int uiType; // 0 = ogg, 02 = jbpx
+		unsigned int uiResType; // 0 = ogg, 02 = jbpx
 		unsigned int uiOffset; // FileOffset = uiOffset + uiResOffset
+	};
+
+	enum ResType
+	{
+		OGG,
+		WEBP, //Custom
+		JBPX
 	};
 
 	class CMV6Editor
