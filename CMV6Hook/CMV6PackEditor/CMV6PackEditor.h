@@ -6,7 +6,7 @@
 
 namespace CMV6File
 {
-	//CMV6File (Some As CMV4 CMV3)
+	//CMV6File (Same As CMV4 CMV3)
 	/*
 	* CMV6FileHeader
 	* CMV6IndexDescriptor[uiResCount + 1];
