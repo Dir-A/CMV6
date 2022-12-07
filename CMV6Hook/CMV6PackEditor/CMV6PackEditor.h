@@ -15,26 +15,26 @@ namespace CMV6File
 
 	struct CMV6FileHeader
 	{
-		char aSignature[4];				//CMV6 CMV4 CMV3
+		char aSignature[4]; //CMV6 CMV4 CMV3
 		unsigned int uiResSecOffset;
 		unsigned int uiCMVFileSize;
-		unsigned int uiUnknow0;			//Not Used
-		unsigned int uiResMaxSequence;	//Start With Zero
+		unsigned int uiUnknow0; //Not Used
+		unsigned int uiResMaxSequence; //Start With Zero
 		unsigned int uiFrameRate;
-		unsigned int uiFrameRateTime;	// Per Second
+		unsigned int uiFrameRateTime; // Per Second
 		unsigned int uiImageWidth;
 		unsigned int uiImageHight;
 		unsigned int uiBitCount;
-		unsigned int uiAudioFlag;		// About Audio File Load If 0x0 Game Will Crash In MOG_INputMemory
+		unsigned int uiAudioFlag; // About Audio File Load If 0x0 Game Will Crash In MOG_INputMemory
 	};
 
 	struct CMV6IndexDescriptor
 	{
-		unsigned int uiSequence;		// Max = uiResCount
+		unsigned int uiSequence; // Max = uiResCount
 		unsigned int uiCmpSize;
-		unsigned int uiOrgSize;			//BitMap Size
-		unsigned int uiResType;			// 0 = ogg, 02 = jbpx
-		unsigned int uiOffset;			// FileOffset = uiOffset + uiResOffset
+		unsigned int uiOrgSize; //BitMap Size
+		unsigned int uiResType; // 0 = ogg, 02 = jbpx
+		unsigned int uiOffset; // FileOffset = uiOffset + uiResOffset
 	};
 
 	enum ResType
