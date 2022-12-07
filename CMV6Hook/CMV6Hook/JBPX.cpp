@@ -290,11 +290,11 @@ VOID UnPackCMV()
 			std::wcout << L"Unpack Start Will Save File In Unpack Folder.\n" << std::endl;
 		}
 
-		CMV6Pack cmv(cmvFile, L"Unpack\\");
+		CMV6File::CMV6Unpack cmv(cmvFile, L"Unpack\\");
 
 		if (isDecode)
 		{
-			for (CMV6IndexDescriptor& descriptor : cmv.m_vecDescriptor)
+			for (CMV6File::CMV6IndexDescriptor& descriptor : cmv.m_vecDescriptor)
 			{
 				if (descriptor.uiType == 0)
 				{

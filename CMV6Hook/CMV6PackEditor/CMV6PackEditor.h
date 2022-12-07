@@ -3,57 +3,92 @@
 #include <fstream>
 #include <vector>
 
-//Some As CMV4 CMV3
-struct CMV6Header
+
+namespace CMV6File
 {
-	char aSignature[4]; //CMV6 CMV4 CMV3
-	unsigned int uiResSecOffset;
-	unsigned int uiFileSize;
-	unsigned int uiUnknow0; //Not Used
-	unsigned int uiResCount;
-	unsigned int uiFrameRate;
-	unsigned int uiFrameRateTime; // Per Second
-	unsigned int uiWide;
-	unsigned int uiHigh;
-	unsigned int uiBitCount;
-	unsigned int uiAudio; // About Audio File Load If 0x0 Game Will Crash In MOG_INputMemory
-	//CMV6IndexDescriptor[uiResCount + 1];
-};
+	//Some As CMV4 CMV3
+	struct CMV6FileHeader
+	{
+		char aSignature[4]; //CMV6 CMV4 CMV3
+		unsigned int uiResSecOffset;
+		unsigned int uiCMVFileSize;
+		unsigned int uiUnknow0; //Not Used
+		unsigned int uiResMaxSequence; //Start With Zero
+		unsigned int uiFrameRate;
+		unsigned int uiFrameRateTime; // Per Second
+		unsigned int uiImageWidth;
+		unsigned int uiImageHight;
+		unsigned int uiBitCount;
+		unsigned int uiAudioFlag; // About Audio File Load If 0x0 Game Will Crash In MOG_INputMemory
+		//CMV6IndexDescriptor[uiResCount + 1];
+		//Resources Data
+	};
 
-struct CMV6IndexDescriptor
-{
-	unsigned int uiSequence; // max = uiResCount
-	unsigned int uiCmpSize;
-	unsigned int uiOrgSize;
-	unsigned int uiType; // 0 = ogg, 02 = jbp
-	unsigned int uiOffset; // dataOffset = uiOffset + uiResOffset
-};
+	struct CMV6IndexDescriptor
+	{
+		unsigned int uiSequence; // Max = uiResCount
+		unsigned int uiCmpSize;
+		unsigned int uiOrgSize; //BitMap Size
+		unsigned int uiType; // 0 = ogg, 02 = jbpx
+		unsigned int uiOffset; // FileOffset = uiOffset + uiResOffset
+	};
 
-class CMV6Pack
-{
-private:
-	char* m_pRes;
-	size_t m_szAllocMax;
-	std::wstring m_wsCMV;
-	std::wstring m_wsPath;
-	std::ifstream m_ifsCMV;
-	std::ofstream m_ofsRES;
+	class CMV6Editor
+	{
+	protected:
+		char* m_pRes;
+		size_t m_szAllocMax;
+		std::fstream m_fsCMV;
+		std::fstream m_fsRES;
+		std::wstring m_wsCMV;
+		std::wstring m_wsPath;
 
-public:
-	size_t m_szData;
-	CMV6Header m_Header;
-	std::vector<CMV6IndexDescriptor> m_vecDescriptor;
+	public:
+		size_t m_szData;
+		CMV6FileHeader m_Header;
 
-private:
-	void InitPackInfo();
-	bool WriteRes(std::wstring wsRes, size_t posRes, size_t szRes);
+	public:
+		CMV6Editor();
+		~CMV6Editor();
+	};
 
-public:
-	CMV6Pack();
-	CMV6Pack(std::wstring wsCMV, std::wstring wsPath);
-	~CMV6Pack();
-	bool UnPackAllRes();
-	bool UnPackSingleRes(unsigned int uiSequence);
-	static std::wstring MakeFileName(unsigned int uiSequence, unsigned int uiType);
-	char* GetResToBuffer(size_t posRes, size_t szRes);
-};
+
+	class CMV6Unpack : public CMV6Editor
+	{
+	public:
+		std::vector<CMV6IndexDescriptor> m_vecDescriptor;
+
+	private:
+		void InitPackInfo();
+		bool WriteRes(std::wstring wsRes, size_t posRes, size_t szRes);
+
+	public:
+		CMV6Unpack(std::wstring wsCMV, std::wstring wsPath);
+
+		bool UnPackAllRes();
+		bool UnPackSingleRes(unsigned int uiSequence);
+		static std::wstring MakeFileName(unsigned int uiSequence, unsigned int uiType);
+		char* GetResToBuffer(size_t posRes, size_t szRes);
+
+
+	};
+
+	class CMV6Pack : public CMV6Editor
+	{
+	private:
+		struct AddResInfo
+		{
+			CMV6IndexDescriptor Descriptor;
+			std::wstring wsResPath;
+		};
+
+	public:
+		std::vector<AddResInfo> m_vecAddResInfo;
+
+	public:
+		CMV6Pack(std::wstring wsPath);
+
+		void AddRes(CMV6IndexDescriptor* lpDescriptor, std::wstring wsResPath);
+		void MakeNewPack();
+	};
+}
