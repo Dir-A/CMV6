@@ -1,7 +1,9 @@
 #include "JBPX.h"
+#include "Tools.h"
 #include "..\CMV6PackEditor\CMV6PackEditor.h"
 #include "..\libs\detours\detours.h"
 #include "..\libs\libwebp\encode.h"
+#include "..\libs\libwebp\decode.h"
 #pragma comment(lib,"..\\libs\\libwebp\\libwebp.lib")
 
 
@@ -49,21 +51,24 @@ BITMAPINFOHEADER g_bInfo = { 0 };
 ImageSecData g_lpSecData = { 0 };
 ImageSecWidthBites g_lpSecBites = { 0 };
 
+BOOL g_isLossless = TRUE;
+DWORD g_dwWebPQuality = 75;
+
 WCHAR g_lpFilePathBuffer[0xFF] = { 0 };
 PCHAR g_pBitMapBuffer = (PCHAR)malloc(0x384000);
 PCHAR g_pJBPDBuffer = (PCHAR)malloc(0x384000);
 
-typedef PBYTE(__fastcall* pGetJBPX)(PBYTE* pTHIS, DWORD dwEDX, DWORD dwSequence, PDWORD szJBPD);
-pGetJBPX orgGetJBPX = (pGetJBPX)0x004333D0;
+typedef PBYTE(__fastcall* pGetJBPXBuffer)(PBYTE* pTHIS, DWORD dwEDX, DWORD dwSequence, PDWORD szJBPDBuffer);
+pGetJBPXBuffer orgGetJBPXBuffer = (pGetJBPXBuffer)0x004333D0;
 
-typedef DWORD(__thiscall* pTransFrame)(PDWORD pThis, DWORD a2, char* pJBPX, PDWORD szJBPX, DWORD a5);
+typedef DWORD(__thiscall* pTransFrame)(PDWORD pThis, DWORD a2, char* pJBPXBuffer, PDWORD szJBPXBuffer, DWORD a5);
 pTransFrame orgTransFrame = (pTransFrame)0x004311E0;
 
-typedef DWORD(WINAPI* pDecJBPD)(ImageSecData* lpImageSecData, ImageSecWidthBites* lpImageSecWidthBites, PBYTE pJBPD, PDWORD szJBPD, DWORD dwUnknow);
-pDecJBPD orgDecJBPD = (pDecJBPD)0x00518490;
+typedef DWORD(__stdcall* pDecJBPDBuffer)(ImageSecData* lpImageSecData, ImageSecWidthBites* lpImageSecWidthBites, PBYTE pJBPDBuffer, PDWORD szJBPDBuffer, DWORD dwUnknow);
+pDecJBPDBuffer orgDecJBPDBuffer = (pDecJBPDBuffer)0x00518490;
 
-typedef DWORD(WINAPI* pDecJBP1)(ImageSecData* lpImageSecData, ImageSecWidthBites* lpImageSecWidthBites, PBYTE pJBP1, PDWORD szJBP1, DWORD dwUnknow);
-pDecJBP1 orgDecJBP1 = (pDecJBP1)0x00431401;
+typedef DWORD(__stdcall* pDecJBP1Buffer)(ImageSecData* lpImageSecData, ImageSecWidthBites* lpImageSecWidthBites, PBYTE pJBP1Buffer, PDWORD szJBP1Buffer, DWORD dwUnknow);
+pDecJBP1Buffer orgDecJBP1Buffer = (pDecJBP1Buffer)0x00431401;
 
 //For 1280 x 720
 //MergeImage Frome 15 Sectors
@@ -102,8 +107,46 @@ VOID MergeImage720(ImageSecData* lpImageSecData, PCHAR pMergeBuffer)
 	}
 }
 
+//For 1280 x 720
+//SplitImage Frome 15 Sectors
+//PerLineBytes = 0x400
+//ImageHight 1,2,3,4,5,6,7,8,9 = 0x100; A,B,C,D,E = 0xD0
+VOID SplitImage720(ImageSecData* lpImageSecData, PCHAR pSplitBuffer)
+{
+	for (size_t iteHight = 0; iteHight < 0x100; iteHight++)
+	{
+		memcpy(&lpImageSecData->pSec0[0x400 * iteHight], &pSplitBuffer[0x400 * 0], 0x400);
+		memcpy(&lpImageSecData->pSec0[0x400 * iteHight], &pSplitBuffer[0x400 * 0], 0x400);
+		memcpy(&lpImageSecData->pSec1[0x400 * iteHight], &pSplitBuffer[0x400 * 1], 0x400);
+		memcpy(&lpImageSecData->pSec2[0x400 * iteHight], &pSplitBuffer[0x400 * 2], 0x400);
+		memcpy(&lpImageSecData->pSec3[0x400 * iteHight], &pSplitBuffer[0x400 * 3], 0x400);
+		memcpy(&lpImageSecData->pSec4[0x400 * iteHight], &pSplitBuffer[0x400 * 4], 0x400);
+		pSplitBuffer += 0x400 * 5;
+	}
+
+	for (size_t iteHight = 0; iteHight < 0x100; iteHight++)
+	{
+		memcpy(&lpImageSecData->pSec5[0x400 * iteHight], &pSplitBuffer[0x400 * 0], 0x400);
+		memcpy(&lpImageSecData->pSec6[0x400 * iteHight], &pSplitBuffer[0x400 * 1], 0x400);
+		memcpy(&lpImageSecData->pSec7[0x400 * iteHight], &pSplitBuffer[0x400 * 2], 0x400);
+		memcpy(&lpImageSecData->pSec8[0x400 * iteHight], &pSplitBuffer[0x400 * 3], 0x400);
+		memcpy(&lpImageSecData->pSec9[0x400 * iteHight], &pSplitBuffer[0x400 * 4], 0x400);
+		pSplitBuffer += 0x400 * 5;
+	}
+
+	for (size_t iteHight = 0; iteHight < 0xD0; iteHight++)
+	{
+		memcpy(&lpImageSecData->pSecA[0x400 * iteHight], &pSplitBuffer[0x400 * 0], 0x400);
+		memcpy(&lpImageSecData->pSecB[0x400 * iteHight], &pSplitBuffer[0x400 * 1], 0x400);
+		memcpy(&lpImageSecData->pSecC[0x400 * iteHight], &pSplitBuffer[0x400 * 2], 0x400);
+		memcpy(&lpImageSecData->pSecD[0x400 * iteHight], &pSplitBuffer[0x400 * 3], 0x400);
+		memcpy(&lpImageSecData->pSecE[0x400 * iteHight], &pSplitBuffer[0x400 * 4], 0x400);
+		pSplitBuffer += 0x400 * 5;
+	}
+}
+
 //Fast Use To Dynamic Dump Frame
-VOID SaveAsBmp(LPCWSTR lpFilePath, PCHAR pBitMapBuffer, DWORD szFile)
+BOOL SaveAsBmp(LPCWSTR lpFilePath, PCHAR pBitMapBuffer, DWORD szFile)
 {
 	lstrcatW((LPWSTR)lpFilePath, L".bmp");
 	HANDLE hFile = CreateFileW(lpFilePath, GENERIC_WRITE, FILE_SHARE_READ, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
@@ -112,14 +155,19 @@ VOID SaveAsBmp(LPCWSTR lpFilePath, PCHAR pBitMapBuffer, DWORD szFile)
 		WriteFile(hFile, &g_bFile, sizeof(BITMAPFILEHEADER), NULL, NULL);
 		WriteFile(hFile, &g_bInfo, sizeof(BITMAPINFOHEADER), NULL, NULL);
 		WriteFile(hFile, pBitMapBuffer, szFile, NULL, NULL);
-
 		FlushFileBuffers(hFile);
 		CloseHandle(hFile);
+
+		return TRUE;
+	}
+	else
+	{
+		return FALSE;
 	}
 }
 
-//Lossless WebP Format But Slow Encoding Speed Use To Decode JBPD By Calling DecJBPD
-VOID SaveAsWebP(LPCWSTR lpFilePath, PUCHAR pBitMapBuffer, DWORD szFile)
+//Lossless WebP Format But Slow Encoding Speed. Use To Decode JBPX By Calling DecJBPX
+BOOL SaveAsWebP(LPCWSTR lpFilePath, PUCHAR pBitMapBuffer, DWORD szFile)
 {
 	lstrcatW((LPWSTR)lpFilePath, L".webp");
 	HANDLE hFile = CreateFileW(lpFilePath, GENERIC_WRITE, FILE_SHARE_READ, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
@@ -132,36 +180,39 @@ VOID SaveAsWebP(LPCWSTR lpFilePath, PUCHAR pBitMapBuffer, DWORD szFile)
 			iteBitMap += 3;
 		}
 
+		//Encode To WebP
 		uint8_t* pWebP = nullptr;
-		size_t szWebP = WebPEncodeLosslessBGRA((uint8_t*)pBitMapBuffer, 1280, 720, 1280 * 4, &pWebP);
+		size_t szWebP = 0;
+		if (g_isLossless)
+		{
+			szWebP = WebPEncodeLosslessBGRA((uint8_t*)pBitMapBuffer, 1280, 720, 1280 * 4, &pWebP);
+		}
+		else
+		{
+			szWebP = WebPEncodeBGRA((uint8_t*)pBitMapBuffer, 1280, 720, 1280 * 4, g_dwWebPQuality, &pWebP);
+		}
 
+		//Write File To Disk
 		WriteFile(hFile, pWebP, szWebP, NULL, NULL);
-
 		FlushFileBuffers(hFile);
 		CloseHandle(hFile);
 		WebPFree(pWebP);
 
 		std::wcout << L"Dump:" << lpFilePath << std::endl;
+
+		return TRUE;
+	}
+	else
+	{
+		return FALSE;
 	}
 }
 
 //Make Full Path Of Dump File
-VOID MakeFileName(DWORD dwSequence)
+PWCHAR MakeFileName(DWORD dwSequence)
 {
 	swprintf_s(g_lpFilePathBuffer, L"Dump\\%08d", dwSequence);
-}
-
-PBYTE __fastcall newGetJBPD(PBYTE* pTHIS, DWORD dwEDX, DWORD dwSequence, PDWORD szJBPD)
-{
-	MakeFileName(dwSequence);
-	return orgGetJBPX(pTHIS, dwEDX, dwSequence, szJBPD);
-}
-
-DWORD WINAPI newDecJBPD(ImageSecData* lpImageSecData, ImageSecWidthBites* lpImageSecWidthBites, PBYTE pJBPD, PDWORD szJBPD, DWORD dwUnknow)
-{
-	MergeImage720(lpImageSecData, g_pBitMapBuffer);
-	SaveAsBmp(g_lpFilePathBuffer, g_pBitMapBuffer, g_bInfo.biSizeImage);
-	return orgDecJBPD(lpImageSecData, lpImageSecWidthBites, pJBPD, szJBPD, dwUnknow);
+	return g_lpFilePathBuffer;
 }
 
 //Set BMP Format File Info
@@ -180,8 +231,8 @@ VOID InitBMPInfo(BITMAPFILEHEADER* lpBitMapFile, BITMAPINFOHEADER* lpBitMapInfo)
 	lpBitMapInfo->biSizeImage = 0x384000;
 }
 
-//Set JBPD Fromat Processing Conditions
-VOID InitJBPDInfo(ImageSecData* lpImageSecData, ImageSecWidthBites* lpImageSecWidthBites)
+//Set JBPX Fromat Processing Conditions
+VOID InitJBPXInfo(ImageSecData* lpImageSecData, ImageSecWidthBites* lpImageSecWidthBites)
 {
 	for (size_t iteSec = 0; iteSec < 0xF; iteSec++)
 	{
@@ -192,31 +243,31 @@ VOID InitJBPDInfo(ImageSecData* lpImageSecData, ImageSecWidthBites* lpImageSecWi
 
 VOID InitDecodeInfo()
 {
-	InitJBPDInfo(&g_lpSecData, &g_lpSecBites);
+	InitJBPXInfo(&g_lpSecData, &g_lpSecBites);
 	InitBMPInfo(&g_bFile, &g_bInfo);
 }
 
-BOOL LoadJBPD(LPCWSTR lpJBPDFileName, PCHAR pJBPDBuffer, PDWORD szJBPDFile)
+BOOL LoadJBPX(LPCWSTR lpJBPXFilePath, PCHAR pJBPXBuffer, PDWORD szJBPXFile)
 {
-	*szJBPDFile = 0;
+	*szJBPXFile = 0;
 	errno_t err = 0;
-	FILE* fpJBPD = nullptr;
+	FILE* fpJBPX = nullptr;
 
-	err = _wfopen_s(&fpJBPD, lpJBPDFileName, L"rb");
-	if (fpJBPD && !err)
+	err = _wfopen_s(&fpJBPX, lpJBPXFilePath, L"rb");
+	if (fpJBPX && !err)
 	{
-		fseek(fpJBPD, 0, SEEK_END);
-		*szJBPDFile = ftell(fpJBPD);
-		fseek(fpJBPD, 0, SEEK_SET);
-		if (!(*szJBPDFile))
+		fseek(fpJBPX, 0, SEEK_END);
+		*szJBPXFile = ftell(fpJBPX);
+		fseek(fpJBPX, 0, SEEK_SET);
+		if (!(*szJBPXFile))
 		{
 			return FALSE;
 		}
 
-		fread(pJBPDBuffer, 1, *szJBPDFile, fpJBPD);
+		fread(pJBPXBuffer, 1, *szJBPXFile, fpJBPX);
 
-		fflush(fpJBPD);
-		fclose(fpJBPD);
+		fflush(fpJBPX);
+		fclose(fpJBPX);
 
 		return TRUE;
 	}
@@ -224,120 +275,213 @@ BOOL LoadJBPD(LPCWSTR lpJBPDFileName, PCHAR pJBPDBuffer, PDWORD szJBPDFile)
 	return FALSE;
 }
 
-VOID JBPDDecodeToWebP(LPCWSTR lpBMPFileName, PCHAR pJBPD, DWORD szJBPD)
+BOOL JBPXDecodeToWebP(LPCWSTR lpJBPXFilePath, PCHAR pJBPXBuffer, DWORD szJBPXBuffer)
 {
-	orgDecJBPD(&g_lpSecData, &g_lpSecBites, (PBYTE)pJBPD, &szJBPD, 0);
+	orgDecJBPDBuffer(&g_lpSecData, &g_lpSecBites, (PBYTE)pJBPXBuffer, &szJBPXBuffer, 0);
 	MergeImage720(&g_lpSecData, g_pBitMapBuffer);
-	SaveAsWebP(lpBMPFileName, (PUCHAR)g_pBitMapBuffer, g_bInfo.biSizeImage);
+	return SaveAsWebP(lpJBPXFilePath, (PUCHAR)g_pBitMapBuffer, g_bInfo.biSizeImage);
 }
 
-VOID JBPDDecodeFromeFile(std::wstring strJBPDFile)
+BOOL JBPXDecodeFromeFile(std::wstring strJBPXFilePath)
 {
-	static DWORD szJBPD = 0;
+	BOOL isLoad = FALSE;
+	BOOL isDecode = FALSE;
+	static DWORD szJBPX = 0;
 
-	LoadJBPD(strJBPDFile.c_str(), g_pJBPDBuffer, &szJBPD);
-	JBPDDecodeToWebP(strJBPDFile.c_str(), g_pJBPDBuffer, szJBPD);
+	isLoad = LoadJBPX(strJBPXFilePath.c_str(), g_pJBPDBuffer, &szJBPX);
+	if (isLoad)
+	{
+		isDecode = JBPXDecodeToWebP(strJBPXFilePath.c_str(), g_pJBPDBuffer, szJBPX);
+		if (isDecode)
+		{
+			return TRUE;
+		}
+		else
+		{
+			std::wcout << L"Decode File Failed!!\n" << std::endl;
+			return FALSE;
+		}
+	}
+	else
+	{
+		std::wcout << L"Load File Failed!!\n" << std::endl;
+		return FALSE;
+	}
 }
 
-VOID ReDoDecodeJBPDFromeFile()
+VOID ReDoDecodeJBPXFromeFile()
 {
-	std::wstring jbpdFile;
+	std::wstring jbpxFilePath;
 	while (true)
 	{
-		std::wcout << L"Input JBPX File Name" << std::endl;
-		std::wcin >> jbpdFile;
-		JBPDDecodeFromeFile(jbpdFile);
+		std::wcout << L"Input JBPX File Name:" << std::endl;
+		std::wcin >> jbpxFilePath;
+		JBPXDecodeFromeFile(jbpxFilePath);
 	}
 }
 
 VOID UnPackCMV()
 {
+	BOOL isSingle = FALSE;
+	BOOL isDecode = FALSE;
+	PCHAR pJBPXBuffer = NULL;
+	PWCHAR resFilePath = NULL;
+	std::wstring cmvFileName;
+
 	CreateDirectoryW(L"Unpack", NULL);
 	CreateDirectoryW(L"Dump", NULL);
 
 	while (true)
 	{
-		BOOL isSingle = FALSE;
-		BOOL isDecode = FALSE;
-		std::wstring cmvFile;
-		std::wstring jbpdFile;
+		std::wcout << L"** UnPackCMV / Decode JBPX Thread **\n" << std::endl;
 
+		//Single JBPX Or CMV File
 		std::wcout
-			<< L"Decode Single JBPX Input 1" << '\n'
-			<< L"Process CMV File Input 0" << std::endl;
+			<< L"Code 1 : Decode Single JBPX \n"
+			<< L"Code 0 : Process CMV File \n"
+			<< L"Input Code:";
 		std::wcin >> isSingle;
-
 		if (isSingle)
 		{
-			JBPDToBMPThread();
+			CreateThread(NULL, NULL, (LPTHREAD_START_ROUTINE)ReDoDecodeJBPXFromeFile, NULL, NULL, NULL);
 			return;
 		}
+		std::wcout << std::endl;
 
+		//Create CMV File OBJ
+		std::wcout << "Input File Name:";
+		std::wcin >> cmvFileName;
+		CMV6File::CMV6Unpack cmvFile(cmvFileName, L"Unpack\\");
+		std::wcout << std::endl;
+
+		//Is Decode JBPX
 		std::wcout
-			<< "Waitting For Command" << '\n'
-			<< "Input File Name" << std::endl;
-		std::wcin >> cmvFile;
-
-		std::wcout << "Is Decode JBPD (1 = T / 0 = F) (If Not Will Unpack All Resources(.JBPX / .Ogg)" << std::endl;
+			<< "Code 1 : Decode JBPX \n"
+			<< "Code 0 : Not Decode Will Unpack All Resources(.JBPX / .Ogg) \n"
+			<< L"Input Code:";
 		std::wcin >> isDecode;
-
 		if (isDecode)
 		{
-			std::wcout << L"Dump Start Will Save File In Dump Folder. It May Take A Few Minutes\n" << std::endl;
-		}
-		else
-		{
-			std::wcout << L"Unpack Start Will Save File In Unpack Folder.\n" << std::endl;
-		}
-
-		CMV6File::CMV6Unpack cmv(cmvFile, L"Unpack\\");
-
-		if (isDecode)
-		{
-			for (CMV6File::CMV6IndexDescriptor& descriptor : cmv.m_vecDescriptor)
+			//Save Image Lossless or Lossy
+			std::wcout 
+				<< L"Code 1 : Lossless\n"
+				<< L"Code 0 : Lossy\n"
+				<< L"Input Code:";
+			std::wcin >> g_isLossless;
+			if (!g_isLossless)
 			{
-				if (descriptor.uiType == 0)
+				std::wcout 
+					<< L"Set Quality Of WebP Lossy\n"
+					<< L"Input Quality:";
+				std::wcin >> g_dwWebPQuality;
+			}
+
+			std::wcout 
+				<< L'\n'
+				<< L"*********************************************\n"
+				<< L"* Dump Start Will Save File In Dump Folder. *\n"
+				<< L"*********************************************\n";
+
+			//ReDo Decode JBPX Frome CMV File
+			for (CMV6File::CMV6IndexDescriptor& descriptor : cmvFile.m_vecDescriptor)
+			{
+				//If Audio File
+				if (descriptor.uiResType == 0)
 				{
-					cmv.UnPackSingleRes(descriptor.uiSequence);
+					cmvFile.UnPackSingleRes(descriptor.uiSequence);
 					continue;
 				}
 
-				MakeFileName(descriptor.uiSequence);
-
-				JBPDDecodeToWebP(g_lpFilePathBuffer, cmv.GetResToBuffer(descriptor.uiOffset + cmv.m_Header.uiResSecOffset, descriptor.uiCmpSize), descriptor.uiCmpSize);
+				resFilePath = MakeFileName(descriptor.uiSequence);
+				pJBPXBuffer = cmvFile.GetResToBuffer(descriptor.uiOffset + cmvFile.m_Header.uiResSecOffset, descriptor.uiCmpSize);
+				JBPXDecodeToWebP(resFilePath, pJBPXBuffer, descriptor.uiCmpSize);
 			}
 		}
 		else
 		{
-			cmv.UnPackAllRes();
+			std::wcout 
+				<< L'\n'
+				<< L"*************************************************\n"
+				<< L"* Unpack Start Will Save File In Unpack Folder. *\n"
+				<< L"*************************************************\n\n";
+
+			cmvFile.UnPackAllRes();
 		}
 
+		std::wcout << std::endl;
 	}
 }
 
+PBYTE __fastcall newGetJBPDBuffer(PBYTE* pTHIS, DWORD dwEDX, DWORD dwSequence, PDWORD szJBPDBuffer)
+{
+	MakeFileName(dwSequence);
+	return orgGetJBPXBuffer(pTHIS, dwEDX, dwSequence, szJBPDBuffer);
+}
+
+DWORD __stdcall newDecJBPD(ImageSecData* lpImageSecData, ImageSecWidthBites* lpImageSecWidthBites, PBYTE pJBPDBuffer, PDWORD szJBPDBuffer, DWORD dwUnknow)
+{
+	MergeImage720(lpImageSecData, g_pBitMapBuffer);
+	SaveAsBmp(g_lpFilePathBuffer, g_pBitMapBuffer, g_bInfo.biSizeImage);
+	return orgDecJBPDBuffer(lpImageSecData, lpImageSecWidthBites, pJBPDBuffer, szJBPDBuffer, dwUnknow);
+}
+
+INT g_iWidth = 1280;
+INT g_iHight = 720;
+DWORD __stdcall DecWebP(ImageSecData* lpImageSecData, ImageSecWidthBites* lpImageSecWidthBites, PBYTE pWebPBuffer, PDWORD szWebPBuffer, DWORD dwUnknow)
+{
+	//If WebP Encode CMV
+	if (*(PDWORD)pWebPBuffer == 0x46464952)
+	{
+		PCHAR pBitMap = (PCHAR)WebPDecodeBGRA((uint8_t*)pWebPBuffer, *szWebPBuffer, &g_iWidth, &g_iHight);
+		if (pBitMap)
+		{
+			SplitImage720(lpImageSecData, pBitMap);
+			WebPFree(pBitMap);
+		}
+
+		return 0;
+	}
+	else
+	{
+		return orgDecJBPDBuffer(lpImageSecData, lpImageSecWidthBites, pWebPBuffer, szWebPBuffer, dwUnknow);
+	}
+}
+
+//*************************
+//*      EXPORT FUNC      *
+//*************************
 VOID CMV6FrameDump()
 {
+	SetConsole(L"CMV6FrameDump");
+
 	InitBMPInfo(&g_bFile, &g_bInfo);
 
 	DetourRestoreAfterWith();
 	DetourTransactionBegin();
 	DetourUpdateThread(GetCurrentThread());
 
-	DetourAttach((PVOID*)&orgGetJBPX, newGetJBPD);
-	DetourAttach((PVOID*)&orgDecJBPD, newDecJBPD);
+	DetourAttach((PVOID*)&orgGetJBPXBuffer, newGetJBPDBuffer);
+	DetourAttach((PVOID*)&orgDecJBPDBuffer, newDecJBPD);
 	DetourTransactionCommit();
 }
 
-//Set Console Input .JBPD File Path Decode To WebP
-VOID JBPDToBMPThread()
+VOID CMV6DecodeWebP()
 {
-	InitDecodeInfo();
-	CreateThread(NULL, NULL, (LPTHREAD_START_ROUTINE)ReDoDecodeJBPDFromeFile, NULL, NULL, NULL);
+	//SetConsole(L"CMV6DecodeWebP");
+
+	DetourRestoreAfterWith();
+	DetourTransactionBegin();
+	DetourUpdateThread(GetCurrentThread());
+
+	DetourAttach((PVOID*)&orgDecJBPDBuffer, DecWebP);
+	DetourTransactionCommit();
 }
 
-//Set Console Input .CMV File Path Unpack All Resources And Decode JBPD
+//Set Console Input .CMV File Path Unpack All Resources And Decode JBPX
 VOID UnPackCMVThread()
 {
+	SetConsole(L"UnPackCMV / Decode JBPX Thread");
+
 	InitDecodeInfo();
 	CreateThread(NULL, NULL, (LPTHREAD_START_ROUTINE)UnPackCMV, NULL, NULL, NULL);
 }

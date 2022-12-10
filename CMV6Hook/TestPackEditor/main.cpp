@@ -1,6 +1,7 @@
 #include <iostream>
 #include "..\CMV6PackEditor\CMV6PackEditor.h"
 #include "..\libs\libwebp\encode.h";
+#include "..\libs\libwebp\decode.h";
 #pragma comment(lib,"..\\libs\\libwebp\\libwebp.lib")
 
 void EncodeWebP()
@@ -48,11 +49,36 @@ void EncodeWebP()
 	}
 }
 
+void DecodeWebP()
+{
+	size_t szFile = 0x1401C;
+	std::ifstream ifsWebP(L"1.webp", std::ios::binary);
+	if (ifsWebP.is_open())
+	{
+		char* pWebP = new char[szFile];
+		ifsWebP.read(pWebP, szFile);
+
+		int width = 1280;
+		int hight = 720;
+		uint8_t* pBitMap = WebPDecodeBGRA((uint8_t*)pWebP, szFile, &width, &hight);
+		WebPFree(pBitMap);
+
+		std::ofstream ofsBitMap(L"1.raw",std::ios::binary);
+		ofsBitMap.write((char*)pBitMap, 1280 * 4 * 720);
+		ofsBitMap.flush();
+		ofsBitMap.close();
+
+
+		delete[] pWebP;
+		ifsWebP.close();
+	}
+}
+
 void PackCMV()
 {
 	size_t resRawSize = 0x2A3000;
 	size_t resCount = 2907;
-	std::wstring resPath = L"Unpack\\";
+	std::wstring resPath = L"Dump\\";
 
 	//Create Pack OBJ
 	CMV6File::CMV6Pack newPack(L"new.cmv");
@@ -74,11 +100,11 @@ void PackCMV()
 	CMV6File::CMV6IndexDescriptor descriptor = { 0 };
 	std::wstring resName;
 	std::ifstream ifsRes;
-	descriptor.uiType = 2;
+	descriptor.uiResType = 2;
 	//Processing JBPX
 	for (size_t iteFile = 0; iteFile < resCount; iteFile++)
 	{
-		resName = resPath + newPack.MakeFileName(iteFile, 2);
+		resName = resPath + newPack.MakeFileName(iteFile, 1);
 		ifsRes.open(resName);
 
 		if (ifsRes.is_open())
@@ -96,7 +122,7 @@ void PackCMV()
 	ifsRes.open(resName);
 	if (ifsRes.is_open())
 	{
-		descriptor.uiType = 0;
+		descriptor.uiResType = 0;
 		descriptor.uiSequence = resCount;
 		descriptor.uiCmpSize = newPack.GetFileSize(ifsRes);
 		descriptor.uiOrgSize = descriptor.uiCmpSize;
@@ -112,5 +138,7 @@ void PackCMV()
 
 int main()
 {
-	PackCMV();
+	DecodeWebP();
+	//EncodeWebP();
+	//PackCMV();
 }

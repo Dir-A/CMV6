@@ -6,7 +6,7 @@
 
 namespace CMV6File
 {
-	//CMV6File (Same As CMV4 CMV3)
+	//CMV6File (Some As CMV4 CMV3)
 	/*
 	* CMV6FileHeader
 	* CMV6IndexDescriptor[uiResCount + 1];
@@ -32,9 +32,9 @@ namespace CMV6File
 	{
 		unsigned int uiSequence; // Max = uiResCount
 		unsigned int uiCmpSize;
-		unsigned int uiOrgSize; //BitMap Size
+		unsigned int uiOrgSize; //BitMap Size ((uiBitCount / 8) * uiImageWidth * uiImageHight)
 		unsigned int uiResType; // 0 = ogg, 02 = jbpx
-		unsigned int uiOffset; // FileOffset = uiOffset + uiResOffset
+		unsigned int uiOffset; // ResFileOffset = uiOffset + uiResOffset
 	};
 
 	enum ResType

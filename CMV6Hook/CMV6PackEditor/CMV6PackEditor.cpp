@@ -211,12 +211,15 @@ namespace CMV6File
 	{
 		if (m_fsCMV.is_open())
 		{
+			//Set Header
 			m_Header.uiResMaxSequence = m_vecAddResInfo.size() - 1;
 			m_Header.uiResSecOffset = (m_Header.uiResMaxSequence + 1) * 0x14 + sizeof(CMV6FileHeader);
 			m_Header.uiCMVFileSize = m_Header.uiResSecOffset + m_szData;
 
+			//Write Header
 			m_fsCMV.write((char*)&m_Header, sizeof(CMV6FileHeader));
 
+			//Write Index
 			size_t posResSecOffset = 0;
 			for (AddResInfo& iteInfo : m_vecAddResInfo)
 			{
@@ -226,6 +229,7 @@ namespace CMV6File
 				m_fsCMV.write((char*)&iteInfo.Descriptor, sizeof(CMV6IndexDescriptor));
 			}
 
+			//Write Resources
 			size_t szRes = 0;
 			for (AddResInfo& iteInfo : m_vecAddResInfo)
 			{
@@ -244,7 +248,6 @@ namespace CMV6File
 					m_fsRES.close();
 				}
 			}
-
 
 			m_fsCMV.flush();
 		}
