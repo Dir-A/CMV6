@@ -5,4 +5,4 @@ A Simple Tools About Processing CMVS Engine .CMV Video Format
 [o] Decode .JBPD To BitMap  
 [o] Decode .JBPD To WebP  
 [o] Repack .CMV  
-[x] Make CMVS Engine Play .CMV With WebPDecoder (Coming Soon)  
+[o] Make CMVS Engine Play .CMV With WebPDecoder  
